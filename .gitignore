@@ -1,1 +1,5 @@
 .DS_Store
+
+# LikeC4 generated diagrams (regenerated via `npx likec4 export`)
+diagrams/generated/
+node_modules/
