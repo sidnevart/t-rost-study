@@ -151,11 +151,775 @@ Pet-проект отвечает на вопрос:
 
 ---
 
-## 2. Ритм курса
+## 2. Как использовать ИИ в этом курсе
+
+ИИ в этом курсе — это не преподаватель, которому нужно верить, и не исполнитель, который "сделает за тебя". Это рабочий инструмент для ускорения:
+
+```text
+понимания -> поиска гипотез -> проектирования экспериментов -> проверки рассуждений -> оформления артефактов
+```
+
+Главная установка:
+
+```text
+ИИ может ускорять обучение, но не должен заменять контакт с кодом, числами и реальными фактами.
+```
+
+Если ИИ сказал "скорее всего", "обычно", "в таких системах" — это гипотеза. Она не становится фактом, пока ты не нашёл подтверждение в коде, docs, логах, метриках, тестах или разговоре с командой.
+
+### 2.1 Роли ИИ
+
+Используй ИИ в разных ролях и явно называй роль в запросе.
+
+#### Tutor
+
+Когда нужно понять тему:
+
+```text
+Объясни FOR UPDATE SKIP LOCKED через MVCC и locks.
+Сначала дай модель, потом пример на 2 транзакциях, потом типичные ошибки.
+В конце дай 5 self-check questions.
+```
+
+Хорошо для:
+
+- новой темы;
+- повторения;
+- объяснения "на пальцах";
+- подготовки к чтению документации;
+- генерации self-check questions.
+
+Ограничение:
+
+```text
+Tutor не знает, как именно это сделано в нашем коде, пока ты не дал ему конкретные файлы.
+```
+
+#### Code reading partner
+
+Когда читаешь конкретный файл:
+
+```text
+Я читаю TQScheduler.kt. Помоги построить карту файла:
+- какие основные ответственности;
+- где state transitions;
+- где coroutine boundaries;
+- где transaction boundaries;
+- какие failure modes искать.
+Не делай выводы без ссылок на фрагменты кода.
+```
+
+Хорошо для:
+
+- составления карты файла;
+- поиска entry points;
+- объяснения сложного control flow;
+- выделения open questions;
+- подготовки аннотации.
+
+Обязательное правило:
+
+```text
+Ответ ИИ должен быть проверен глазами в коде.
+Если он ссылается на несуществующий метод/класс — это сигнал снизить доверие.
+```
+
+#### Research designer
+
+Когда появилась идея:
+
+```text
+Помоги превратить идею "one-SQL fast path" в проверяемую гипотезу.
+Нужны: observation, hypothesis, minimal experiment, metrics, correctness check,
+caveats, decision rule.
+```
+
+Хорошо для:
+
+- формулировки гипотезы;
+- выбора минимального эксперимента;
+- определения метрик;
+- поиска correctness check;
+- выявления рисков.
+
+Нельзя:
+
+```text
+Нельзя позволять ИИ превращать непроверенную идею сразу в production design.
+Сначала experiment.
+```
+
+#### Experiment reviewer
+
+Перед запуском эксперимента:
+
+```text
+Проверь дизайн эксперимента.
+Где bias? Что я не контролирую? Какие метрики не хватает?
+Как может сломаться correctness check?
+```
+
+Хорошо для:
+
+- поиска confounders;
+- проверки baseline;
+- проверки repeatability;
+- проверки caveats;
+- борьбы с confirmation bias.
+
+#### Debugging assistant
+
+Когда что-то не работает:
+
+```text
+Вот симптом, команда, output и что я уже проверил.
+Помоги построить debugging tree: самые вероятные причины, как отличить одну от другой,
+какие команды выполнить следующими.
+```
+
+Хорошо для:
+
+- структурирования отладки;
+- генерации проверок;
+- чтения stack traces;
+- поиска missing assumptions.
+
+Нельзя:
+
+```text
+Не проси "почини" без симптомов, команды и expected behavior.
+ИИ должен работать с evidence, а не угадывать.
+```
+
+#### Code generator
+
+Когда пишешь pet-проект, benchmark или локальный research patch:
+
+```text
+Сгенерируй минимальный Kotlin пример SKIP LOCKED worker-а.
+Требования:
+- только demo code;
+- comments where behavior matters;
+- no production abstractions;
+- include how to run;
+- include expected output.
+```
+
+Хорошо для:
+
+- boilerplate;
+- pet-project skeleton;
+- benchmark harness;
+- SQL scripts;
+- small utilities;
+- markdown templates.
+
+Ограничение:
+
+```text
+Сгенерированный код не считается правильным, пока ты его не запустил,
+не понял и не проверил output.
+```
+
+#### Reviewer / critic
+
+Когда артефакт уже написан:
+
+```text
+Проведи review этой заметки как senior engineer.
+Ищи:
+- неподтверждённые утверждения;
+- missing metrics;
+- слабый correctness check;
+- неявные риски;
+- места, где вывод не следует из данных.
+```
+
+Хорошо для:
+
+- RFC review;
+- experiment report review;
+- architecture trade-off review;
+- подготовки к обсуждению с командой.
+
+#### Editor
+
+Когда нужно привести мысли в понятный документ:
+
+```text
+Перепиши этот research note в структуру:
+Problem / Evidence / Alternatives / Recommendation / Risks / Next steps.
+Не добавляй новых фактов. Пометь слабые места как TODO/evidence missing.
+```
+
+Хорошо для:
+
+- упаковки заметок;
+- сокращения воды;
+- превращения raw notes в RFC section;
+- подготовки презентации.
+
+Нельзя:
+
+```text
+Нельзя разрешать ИИ добавлять "убедительные" факты, которых нет в твоих данных.
+```
+
+### 2.2 Когда ИИ нужно использовать
+
+ИИ желательно использовать всегда, когда он снижает стоимость мышления, но не снижает качество проверки.
+
+#### Перед чтением новой темы
+
+Цель: получить mental model.
+
+```text
+Мне нужно изучить ClickHouse MergeTree для audience queries.
+Дай карту темы:
+- какие понятия обязательны;
+- какие вопросы задать к нашим таблицам;
+- какие команды/EXPLAIN использовать;
+- какие ошибки новичка.
+```
+
+#### Перед чтением большого файла
+
+Цель: не утонуть.
+
+```text
+Я сейчас буду читать файл <path>. По названию и контексту предположи,
+какие ответственности в нём искать, какие side effects, какие tests найти рядом.
+Потом я дам тебе фрагменты кода для проверки.
+```
+
+#### После чтения файла
+
+Цель: проверить понимание.
+
+```text
+Я понял файл так: ...
+Проверь рассуждение. Где я мог перепутать control flow?
+Какие вопросы остались без доказательств?
+```
+
+#### Перед экспериментом
+
+Цель: не сделать бессмысленный benchmark.
+
+```text
+Вот мой experiment design. Проверь:
+- достаточно ли baseline;
+- какие переменные нужно зафиксировать;
+- как проверить correctness;
+- какие caveats записать;
+- какой decision rule поставить до запуска.
+```
+
+#### После эксперимента
+
+Цель: не натянуть вывод на желаемое решение.
+
+```text
+Вот raw numbers. Помоги интерпретировать.
+Не делай recommendation, пока не перечислишь caveats.
+Отдельно проверь, следует ли вывод из данных.
+```
+
+#### Перед разговором с командой
+
+Цель: задать fact-based вопросы.
+
+```text
+Мне нужно поговорить с PM о задержках аудиторий.
+Перепиши мои вопросы в стиле Mom Test:
+- без leading questions;
+- про факты из прошлого;
+- чтобы узнать impact и workarounds.
+```
+
+#### Перед RFC review
+
+Цель: подготовиться к возражениям.
+
+```text
+Вот draft RFC. Сыграй skeptical reviewer из Target/A-P/SRE.
+Дай top-10 возражений, какие evidence нужны для ответа,
+и какие части RFC слабые.
+```
+
+### 2.3 Когда ИИ можно использовать
+
+Можно, если результат не является final authority.
+
+#### Можно для генерации черновиков
+
+Подходит:
+
+- первый draft diagram;
+- первый RFC outline;
+- список альтернатив;
+- markdown templates;
+- glossary;
+- learning plan for topic.
+
+Условие:
+
+```text
+Ты редактируешь и проверяешь черновик.
+```
+
+#### Можно для boilerplate code
+
+Подходит:
+
+- pet-project skeleton;
+- benchmark harness;
+- SQL generator;
+- parsing script;
+- small local utilities.
+
+Условие:
+
+```text
+Ты запускаешь код, читаешь его и понимаешь каждую существенную часть.
+```
+
+#### Можно для объяснения ошибок
+
+Подходит:
+
+- stack trace;
+- query plan;
+- compiler error;
+- failing test;
+- profiler output.
+
+Условие:
+
+```text
+Ты даёшь полный контекст: command, output, expected behavior, what changed.
+```
+
+#### Можно для сравнения подходов
+
+Подходит:
+
+- DAG vs SQL;
+- PG queue vs Kafka;
+- CopyObject vs download/upload;
+- cache vs incremental;
+- bitmap service vs CH bitmap.
+
+Условие:
+
+```text
+ИИ сравнивает conceptual trade-offs.
+Фактическое решение принимается только после local/project-specific evidence.
+```
+
+### 2.4 Когда ИИ нельзя использовать как источник истины
+
+ИИ нельзя считать источником истины для:
+
+- текущего поведения нашего кода без предоставленного кода;
+- production incidents;
+- точных SLA/SLO;
+- схем БД, которых он не видел;
+- Kafka/Avro contracts, которых он не видел;
+- security decisions;
+- performance claims без benchmark;
+- "лучших практик" без привязки к контексту;
+- политических/организационных выводов без разговоров с людьми.
+
+Запрещённый паттерн:
+
+```text
+ИИ сказал, что ClickHouse будет быстрее, значит делаем fast path.
+```
+
+Правильный паттерн:
+
+```text
+ИИ помог сформулировать гипотезу.
+Я выбрал use-case.
+Я написал query.
+Я сравнил с DAG.
+Я проверил correctness.
+Я записал caveats.
+Теперь можно обсуждать fast path.
+```
+
+### 2.5 Когда ИИ вреден
+
+ИИ вреден, если он:
+
+- создаёт иллюзию понимания;
+- заменяет чтение кода;
+- подталкивает к premature architecture;
+- пишет слишком убедительный RFC без evidence;
+- генерирует сложный код, который ты не можешь объяснить;
+- маскирует unknowns красивыми словами;
+- увеличивает scope;
+- превращает learning в consumption.
+
+Красные флаги:
+
+```text
+[ ] Я не могу объяснить сгенерированный код.
+[ ] Я не запускал пример.
+[ ] Я не нашёл подтверждение в проекте.
+[ ] Я скопировал explanation в артефакт без проверки.
+[ ] В тексте появились факты, которых нет в моих notes.
+[ ] После разговора с ИИ мне кажется, что я всё понял, но нет diagram/SQL/benchmark.
+```
+
+Если появился красный флаг — остановиться и вернуться к коду/эксперименту.
+
+### 2.6 Правило доверия
+
+Используй такую шкалу:
+
+| Тип ответа ИИ | Доверие | Что нужно сделать |
+|---|---:|---|
+| Объяснение общей концепции | Medium | сверить с docs/book |
+| Объяснение конкретного кода, который ты дал | Medium | проверить руками в IDE/tests |
+| Утверждение о нашем проекте без кода | Low | найти code evidence |
+| Performance claim | Very low | benchmark |
+| Security/contract claim | Very low | проверить docs/code/team |
+| RFC wording | Medium | проверить, что нет новых фактов |
+| Generated pet-code | Low | запустить, прочитать, протестировать |
+| Generated production code | Very low | review, tests, benchmarks, rollback |
+
+Базовое правило:
+
+```text
+ИИ производит hypotheses and drafts.
+Факты производят код, тесты, метрики, логи, документация и люди.
+```
+
+### 2.7 Как задавать хорошие запросы
+
+Плохой запрос:
+
+```text
+Объясни TQ.
+```
+
+Хороший:
+
+```text
+Я изучаю TQ scheduler в контексте audience loading.
+Моя цель — понять, где DAG добавляет latency.
+Вот что я уже знаю: ...
+Вот файл/фрагмент: ...
+Помоги:
+1. построить control-flow map;
+2. выделить state transitions;
+3. найти места для timing instrumentation;
+4. сформулировать 5 open questions.
+Не делай выводов без ссылки на код.
+```
+
+Структура хорошего запроса:
+
+```text
+Context:
+  Что изучаю и зачем.
+
+Known facts:
+  Что уже подтверждено.
+
+Input:
+  Код, output, SQL, numbers, draft.
+
+Task:
+  Что именно нужно сделать.
+
+Constraints:
+  Не добавлять факты, не писать production code, давать caveats.
+
+Output format:
+  Table / checklist / experiment design / review findings.
+```
+
+### 2.8 Сценарии по модулям курса
+
+#### Module 1. Domain
+
+Использовать ИИ для:
+
+- объяснения domain model;
+- составления lifecycle diagram;
+- генерации self-check questions;
+- проверки твоего пересказа.
+
+Нельзя:
+
+- принимать на веру lifecycle, если он не найден в коде;
+- придумывать статусы/поля, которых нет в модели.
+
+#### Module 2. Integration
+
+Использовать ИИ для:
+
+- contract table;
+- edge-case list;
+- Avro evolution questions;
+- idempotency review.
+
+Нельзя:
+
+- доверять ИИ про реальные Kafka topics без схем/кода;
+- менять контракт по AI-рекомендации без team review.
+
+#### Module 3. Baseline
+
+Использовать ИИ для:
+
+- дизайна benchmark;
+- поиска missing metrics;
+- интерпретации raw numbers;
+- caveats.
+
+Нельзя:
+
+- принимать performance claims без замера;
+- сравнивать local synthetic и prod как одно и то же.
+
+#### Module 4. TQ/DAG/Coroutines
+
+Использовать ИИ для:
+
+- объяснения coroutines;
+- аннотации scheduler-а;
+- critical path model;
+- failure mode brainstorming.
+
+Нельзя:
+
+- менять scheduler defaults на основе общего совета;
+- доверять AI-generated concurrent code без тестов.
+
+#### Module 5. Postgres
+
+Использовать ИИ для:
+
+- разбора EXPLAIN;
+- планирования SKIP LOCKED experiment;
+- объяснения MVCC;
+- проверки SQL scripts.
+
+Нельзя:
+
+- применять AI-generated index в реальной БД без EXPLAIN и review;
+- делать выводы по planner без реальной статистики.
+
+#### Module 6. ClickHouse/S3
+
+Использовать ИИ для:
+
+- чтения EXPLAIN PIPELINE;
+- составления CH table map;
+- S3 CopyObject experiment design;
+- CSV vs Parquet comparison plan.
+
+Нельзя:
+
+- считать, что generic CH best practice применима к нашим таблицам;
+- менять S3 layout без security/ownership review.
+
+#### Module 7. Alternatives
+
+Использовать ИИ для:
+
+- decision table;
+- альтернатив;
+- risk review;
+- формулировки candidate RFC hypothesis.
+
+Нельзя:
+
+- позволять ИИ выбрать архитектуру без evidence;
+- увеличивать scope до "нового сервиса", пока не доказан минимальный case.
+
+#### Module 8. Production Engineering
+
+Использовать ИИ для:
+
+- SLI/SLO draft;
+- failure mode list;
+- load test plan;
+- rollback checklist;
+- profiling interpretation.
+
+Нельзя:
+
+- принимать security/reliability guarantees без проверки;
+- игнорировать p95/p99;
+- делать production readiness из одного локального прогона.
+
+#### Module 9. RFC
+
+Использовать ИИ для:
+
+- структуры RFC;
+- review objections;
+- улучшения wording;
+- stakeholder-specific explanations.
+
+Нельзя:
+
+- позволять ИИ добавить evidence;
+- писать "убедительно", если facts weak;
+- скрывать risks.
+
+### 2.9 AI-assisted learning loop
+
+Для каждой темы используй такой цикл:
+
+```text
+1. Ask AI for map
+   Получить карту темы и ключевые вопросы.
+
+2. Read primary source
+   Код, docs, книга, schema, EXPLAIN.
+
+3. Ask AI to quiz you
+   Проверить понимание.
+
+4. Build something
+   Pet-project, SQL, benchmark, diagram.
+
+5. Ask AI to review artifact
+   Найти gaps, caveats, missing evidence.
+
+6. Verify manually
+   Запустить, измерить, сверить с кодом.
+
+7. Write final note yourself
+   ИИ может редактировать, но вывод формулируешь ты.
+```
+
+### 2.10 AI usage log
+
+Для важных решений фиксируй, как использовался ИИ.
+
+В experiment/RFC notes добавляй:
+
+```markdown
+## AI assistance
+
+- Used for:
+- Inputs provided:
+- Outputs accepted:
+- Outputs rejected:
+- Manual verification:
+- Remaining uncertainty:
+```
+
+Зачем:
+
+- дисциплинирует;
+- показывает, где facts, а где AI-generated hypotheses;
+- помогает не забыть проверить слабые места.
+
+### 2.11 Готовые промпты
+
+#### Topic map
+
+```text
+Я изучаю <topic> для A-P / Target / TQ.
+Цель: <why>.
+Дай карту темы:
+- key concepts;
+- how it appears in backend/platform systems;
+- what to look for in our code;
+- hands-on exercise;
+- common mistakes;
+- self-check questions.
+```
+
+#### Code reading
+
+```text
+Вот файл/фрагмент кода: <paste>.
+Контекст: <flow/module>.
+Помоги:
+- выделить responsibilities;
+- построить control flow;
+- найти state changes;
+- найти external boundaries;
+- найти failure modes;
+- предложить instrumentation points.
+Не делай выводов без evidence из кода.
+```
+
+#### Experiment design
+
+```text
+Идея: <idea>.
+Observation: <what I saw>.
+Помоги оформить experiment:
+- hypothesis;
+- minimal setup;
+- baseline;
+- change;
+- metrics;
+- correctness check;
+- caveats;
+- decision rule.
+```
+
+#### Benchmark review
+
+```text
+Вот benchmark design / raw numbers: <data>.
+Проверь:
+- хватает ли прогонов;
+- есть ли warmup/cache bias;
+- какие переменные не контролируются;
+- можно ли делать вывод;
+- какой следующий эксперимент.
+```
+
+#### RFC critic
+
+```text
+Вот RFC draft: <text>.
+Проведи senior review:
+- unsupported claims;
+- missing metrics;
+- hidden risks;
+- weak rollout/rollback;
+- likely objections by A-P/Target/SRE/PM;
+- what evidence would make it stronger.
+```
+
+### 2.12 Final rule
+
+ИИ полезен, если после него ты ближе к одному из артефактов:
+
+```text
+diagram
+SQL
+EXPLAIN
+benchmark
+profile
+patch
+experiment note
+decision table
+RFC section
+```
+
+ИИ вреден, если после него у тебя только ощущение, что стало понятнее.
+
+---
+
+## 3. Ритм курса
 
 Жёстких сроков нет, но нужен ритм. Иначе курс превратится в набор красивых файлов.
 
-### 2.1 Одна учебная сессия
+### 3.1 Одна учебная сессия
 
 Ориентир: 60-90 минут.
 
@@ -179,7 +943,7 @@ Pet-проект отвечает на вопрос:
 - pet-project commit;
 - RFC paragraph.
 
-### 2.2 Один учебный блок
+### 3.2 Один учебный блок
 
 Ориентир: от нескольких дней до 2 недель.
 
@@ -200,7 +964,7 @@ Pet-проект отвечает на вопрос:
    Документ, который можно показать другому инженеру.
 ```
 
-### 2.3 Один большой этап
+### 3.3 Один большой этап
 
 Ориентир: 1-2 месяца.
 
@@ -219,7 +983,7 @@ RFC draft section
 
 ---
 
-## 3. Карта курса
+## 4. Карта курса
 
 Курс состоит из 9 больших модулей.
 
@@ -1675,7 +2439,7 @@ RFC готов к review, когда:
 
 ---
 
-## 4. Интегрированный порядок прохождения
+## 5. Интегрированный порядок прохождения
 
 Ниже не дедлайны, а рекомендуемый порядок. Один пункт может занять 2 дня, неделю или месяц.
 
@@ -1868,7 +2632,7 @@ Pet-projects:
 
 ---
 
-## 5. Книжная программа как часть курса
+## 6. Книжная программа как часть курса
 
 Книги не читаются отдельно от практики. Каждая книга должна дать артефакт.
 
@@ -2051,11 +2815,11 @@ Pet-projects:
 
 ---
 
-## 6. Pet-project каталог
+## 7. Pet-project каталог
 
 Pet-проекты нужны не для портфолио, а для понимания механизмов.
 
-### 6.1 audience-domain-playground
+### 7.1 audience-domain-playground
 
 Изучает:
 
@@ -2069,7 +2833,7 @@ Pet-проекты нужны не для портфолио, а для пони
 - state machine;
 - tests.
 
-### 6.2 contract-roundtrip-playground
+### 7.2 contract-roundtrip-playground
 
 Изучает:
 
@@ -2085,7 +2849,7 @@ Pet-проекты нужны не для портфолио, а для пони
 - dedup;
 - error case.
 
-### 6.3 pipeline-timeline-analyzer
+### 7.3 pipeline-timeline-analyzer
 
 Изучает:
 
@@ -2099,7 +2863,7 @@ Pet-проекты нужны не для портфолио, а для пони
 - calculate stage durations;
 - output markdown table.
 
-### 6.4 mini-tq
+### 7.4 mini-tq
 
 Изучает:
 
@@ -2119,7 +2883,7 @@ Pet-проекты нужны не для портфолио, а для пони
 - SKIP LOCKED;
 - heartbeat.
 
-### 6.5 pg-queue-lab
+### 7.5 pg-queue-lab
 
 Изучает:
 
@@ -2135,7 +2899,7 @@ Pet-проекты нужны не для портфолио, а для пони
 - multiple workers;
 - benchmark.
 
-### 6.6 ch-audience-lab
+### 7.6 ch-audience-lab
 
 Изучает:
 
@@ -2150,7 +2914,7 @@ Pet-проекты нужны не для портфолио, а для пони
 - simple audience queries;
 - EXPLAIN reports.
 
-### 6.7 bitmap-vs-sql-lab
+### 7.7 bitmap-vs-sql-lab
 
 Изучает:
 
@@ -2164,7 +2928,7 @@ Pet-проекты нужны не для портфолио, а для пони
 - 100 segments;
 - intersect/union/count benchmark.
 
-### 6.8 audience-cache-hash-lab
+### 7.8 audience-cache-hash-lab
 
 Изучает:
 
@@ -2179,7 +2943,7 @@ Pet-проекты нужны не для портфолио, а для пони
 - sha256/blake3;
 - duplicate detection.
 
-### 6.9 planner-lab
+### 7.9 planner-lab
 
 Изучает:
 
@@ -2194,7 +2958,7 @@ input: audience params + metadata
 output: DAG / SQL / Cache / Bitmap + explanation
 ```
 
-### 6.10 production-labs
+### 7.10 production-labs
 
 Маленькие labs:
 
@@ -2206,7 +2970,7 @@ output: DAG / SQL / Cache / Bitmap + explanation
 
 ---
 
-## 7. Как превращать идею в эксперимент
+## 8. Как превращать идею в эксперимент
 
 Если появилась идея, не записывай её как "сделать". Записывай как hypothesis.
 
@@ -2300,9 +3064,9 @@ Experiment:
 
 ---
 
-## 8. Главные decision tables
+## 9. Главные decision tables
 
-### 8.1 Execution path table
+### 9.1 Execution path table
 
 Заполняется после Module 7.
 
@@ -2315,7 +3079,7 @@ Experiment:
 | External S3 reference |  |  |  |  |  |  |
 | Freshness-critical |  |  |  |  |  |  |
 
-### 8.2 Risk table
+### 9.2 Risk table
 
 | Idea | Correctness risk | Freshness risk | Operational risk | Contract risk | Rollback complexity | Owner risk |
 |---|---|---|---|---|---|---|
@@ -2326,7 +3090,7 @@ Experiment:
 | S3 CopyObject |  |  |  |  |  |  |
 | LISTEN/NOTIFY |  |  |  |  |  |  |
 
-### 8.3 Evidence table
+### 9.3 Evidence table
 
 | Claim | Evidence | Artifact | Confidence | Missing data |
 |---|---|---|---|---|
@@ -2336,7 +3100,7 @@ Experiment:
 
 ---
 
-## 9. Что должно быть в финальном пакете
+## 10. Что должно быть в финальном пакете
 
 К концу полного курса у тебя должен быть не один файл, а пакет:
 
@@ -2368,7 +3132,7 @@ Experiment:
 
 ---
 
-## 10. Первый практический проход
+## 11. Первый практический проход
 
 Если хочется начать прямо сейчас и не думать:
 
@@ -2397,7 +3161,7 @@ Step 5.
 
 ---
 
-## 11. Главное правило курса
+## 12. Главное правило курса
 
 Не пытайся "выучить всё" линейно.
 
@@ -2426,4 +3190,3 @@ Step 5.
 могу менять код как эксперимент, мерить эффект, доказывать correctness
 и оформлять улучшения так, чтобы их можно было безопасно внедрять".
 ```
-
